@@ -1,62 +1,93 @@
 # Design
 
 ## Architecture
+The utility is designed with a modular approach, separating concerns for email, password, and phone number validation. Each validation function is implemented as a pure function, ensuring predictability and ease of testing. Regular expressions are utilized for efficient pattern matching, and TypeScript's type system is leveraged for type safety. Error handling is incorporated to provide meaningful feedback when validation fails.
 
-To build a comprehensive TypeScript utility that validates email addresses, strong passwords, and phone numbers, we will follow a modular and scalable architecture. This approach will ensure that the utility is easy to maintain and extend.
+## Key TypeScript Types/Interfaces
+```typescript
+type Email = string;
+type Password = string;
+type PhoneNumber = string;
 
-### Module Structure
+enum ValidationError {
+    InvalidEmail = "Invalid email format",
+    WeakPassword = "Password must be at least 8 characters long and contain a mix of letters, numbers, and symbols.",
+    InvalidPhoneNumber = "Invalid phone number format"
+}
 
-1. **src/validators/EmailValidator.ts**: Contains the logic for validating email addresses.
-2. **src/validators/PasswordValidator.ts**: Contains the logic for validating strong passwords.
-3. **src/validators/PhoneNumberValidator.ts**: Contains the logic for validating phone numbers.
-4. **src/utils/ValidationUtils.ts**: Contains utility functions for error handling and validation rules.
-5. **src/index.ts**: Entry point for the utility.
+interface ValidationResult {
+    isValid: boolean;
+    error?: ValidationError;
+}
+```
 
-### Key TypeScript Types/Interfaces
-
-1. **EmailValidatorOptions**: Interface for configuring email validation rules.
-2. **PasswordValidatorOptions**: Interface for configuring password validation rules.
-3. **PhoneNumberValidatorOptions**: Interface for configuring phone number validation rules.
-4. **ValidationResult**: Interface for the result of a validation operation.
-
-### File Structure (keep it to 1-2 files inside src/)
-
+## File Structure
 ```
 src/
-├── validators/
-│   ├── EmailValidator.ts
-│   ├── PasswordValidator.ts
-│   └── PhoneNumberValidator.ts
-├── utils/
-│   └── ValidationUtils.ts
-└── index.ts
+├── validation.ts
 ```
 
-### Edge Cases
+### validation.ts
+```typescript
+type Email = string;
+type Password = string;
+type PhoneNumber = string;
 
-1. **Email Validation**:
-   - **Invalid Characters**: Ensure that the email address does not contain invalid characters (e.g., spaces, special characters).
-   - **Domain Validation**: Check if the domain part of the email address is valid (e.g., using a regular expression to match valid domain names).
-   - **Empty String**: Handle cases where the input string is empty.
-   - **Multiple At Symbols**: Ensure that there is only one "@" symbol in the email address.
-   - **Missing "@" Symbol**: Handle cases where the "@" symbol is missing.
+enum ValidationError {
+    InvalidEmail = "Invalid email format",
+    WeakPassword = "Password must be at least 8 characters long and contain a mix of letters, numbers, and symbols.",
+    InvalidPhoneNumber = "Invalid phone number format"
+}
 
-2. **Password Validation**:
-   - **Minimum Length**: Ensure the password meets a minimum length requirement.
-   - **Character Requirements**: Check for the presence of at least one uppercase letter, one lowercase letter, one digit, and one special character.
-   - **Empty String**: Handle cases where the input string is empty.
-   - **Repeating Characters**: Ensure that there are no repeating characters in the password.
-   - **Special Characters**: Ensure that the password contains at least one special character.
+interface ValidationResult {
+    isValid: boolean;
+    error?: ValidationError;
+}
 
-3. **Phone Number Validation**:
-   - **Format Validation**: Check if the phone number is in a valid format (e.g., using a regular expression to match common formats).
-   - **Empty String**: Handle cases where the input string is empty.
-   - **Invalid Characters**: Ensure that the phone number does not contain invalid characters (e.g., letters).
-   - **Missing Country Code**: Handle cases where the country code is missing.
+function validateEmail(email: Email): ValidationResult {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (emailRegex.test(email)) {
+        return { isValid: true };
+    }
+    return { isValid: false, error: ValidationError.InvalidEmail };
+}
 
-4. **Error Handling**:
-   - **Detailed Error Messages**: Provide clear and informative error messages to help users understand what went wrong.
-   - **Consistent Error Handling**: Ensure that all error messages are consistent and follow a standardized format.
-   - **User-Friendly Messages**: Provide user-friendly error messages that are easy to understand and follow a consistent tone.
+function validatePassword(password: Password): ValidationResult {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (passwordRegex.test(password)) {
+        return { isValid: true };
+    }
+    return { isValid: false, error: ValidationError.WeakPassword };
+}
 
-By following these guidelines and patterns, you can build a robust and maintainable TypeScript utility for validating email addresses, strong passwords, and phone numbers.
+function validatePhoneNumber(phone: PhoneNumber): ValidationResult {
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
+    if (phoneRegex.test(phone)) {
+        return { isValid: true };
+    }
+    return { isValid: false, error: ValidationError.InvalidPhoneNumber };
+}
+
+// Example usage
+console.log(validateEmail("test@example.com")); // { isValid: true }
+console.log(validatePassword("StrongP@ssw0rd")); // { isValid: true }
+console.log(validatePhoneNumber("+1234567890")); // { isValid: true }
+```
+
+## Edge Cases
+- **Email Validation Edge Cases**:
+  - International characters and special characters in local parts.
+  - Maximum length of 254 characters.
+  
+- **Password Validation Edge Cases**:
+  - Minimum length of 8 characters.
+  - At least one uppercase letter, one lowercase letter, one number, and one special character.
+  - Check against common passwords to prevent weak choices.
+
+- **Phone Number Validation Edge Cases**:
+  - Support for international formats (E.164).
+  - Handle various lengths and formats while ensuring validity.
+
+- **Input Sanitization**: Always sanitize inputs to prevent injection attacks or unexpected behavior.
+
+- **Performance Considerations**: Optimize regex operations for large-scale applications to ensure efficient validation.
