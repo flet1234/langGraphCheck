@@ -29,7 +29,11 @@ def implement_node(state: DevCycleState) -> dict:
         retry_context += f"\nHuman review feedback to address:\n{state['feedback']}\n"
 
     prompt = f"""You are a senior TypeScript engineer.
-Write pure, strict TypeScript code (no external npm packages, only standard TypeScript).
+Rules:
+- Write pure, standalone TypeScript functions/interfaces.
+- Do NOT import Node.js modules (like 'assert', 'fs', 'path') or external npm libraries.
+- Do NOT include ```typescript markdown fences inside the file content.
+- Keep regular expressions on a single line.
 
 Task: {state['task']}
 Plan:
